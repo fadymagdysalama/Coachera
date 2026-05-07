@@ -1,6 +1,7 @@
 {
   "buildCommand": "npm run build:web",
   "outputDirectory": "dist",
+  "framework": "static",
   "cleanUrls": true,
   "trailingSlash": false,
   "headers": [
@@ -12,12 +13,6 @@
           "value": "no-cache, no-store, must-revalidate"
         }
       ]
-    }
-  ],
-  "rewrites": [
-    {
-      "source": "/:path((?!api/).*)",
-      "destination": "/index.html"
     }
   ]
 }
