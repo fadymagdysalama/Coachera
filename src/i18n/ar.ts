@@ -280,7 +280,7 @@ export default {
     spots: '{{count}} / {{max}} مكان',
     unlimited: 'أماكن غير محدودة',
     saveChanges: 'حفظ التغييرات',
-    reschedule: 'إعادة الجدولة',
+    edit: 'إعادة الجدولة',
     removeParticipant: 'إزالة',
     addParticipant: 'إضافة',
     with: 'مع {{name}}',

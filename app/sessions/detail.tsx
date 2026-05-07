@@ -193,7 +193,7 @@ export default function SessionDetailScreen() {
               router.push({ pathname: '/sessions/edit', params: { sessionId: session.id } })
             }
           >
-            <Text style={styles.editNavText}>{t('schedule.reschedule')}</Text>
+            <Text style={styles.editNavText}>{t('schedule.edit')}</Text>
           </TouchableOpacity>
         ) : (
           <View style={{ width: 36 }} />

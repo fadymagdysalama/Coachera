@@ -282,7 +282,7 @@ export default {
     spots: '{{count}} / {{max}} spots',
     unlimited: 'Unlimited spots',
     saveChanges: 'Save Changes',
-    reschedule: 'Reschedule',
+    edit: 'Edit',
     removeParticipant: 'Remove',
     addParticipant: 'Add',
     with: 'With {{name}}',
