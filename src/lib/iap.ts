@@ -1,5 +1,21 @@
 import { Platform } from 'react-native';
-import { fetchProducts, initConnection, requestPurchase, getReceiptDataIOS, finishTransaction, getAvailablePurchases, endConnection } from 'react-native-iap';
+
+const shouldUseIAP = Platform.OS === 'ios';
+
+let iapModule: any = null;
+
+async function getIAPModule() {
+  if (!shouldUseIAP || iapModule) return iapModule;
+  if (typeof window === 'undefined') return null; // SSR
+  
+  try {
+    iapModule = await import('react-native-iap');
+    return iapModule;
+  } catch (e) {
+    console.log('IAP module not available:', e);
+    return null;
+  }
+}
 
 export const IAP_PRODUCT_SKUS = {
   MONTHLY_PRO: 'monthly_pro',
@@ -12,14 +28,14 @@ let isInitialized = false;
 type Product = any;
 type Purchase = any;
 
-const shouldUseIAP = Platform.OS === 'ios';
-
 export const initializeIAP = async (): Promise<boolean> => {
   if (!shouldUseIAP) return false;
   if (isInitialized) return true;
   
   try {
-    const result = await initConnection();
+    const mod = await getIAPModule();
+    if (!mod) return false;
+    const result = await mod.initConnection();
     console.log('IAP init result:', result);
     isInitialized = true;
     return result;
@@ -34,13 +50,14 @@ export const getSubscriptionProducts = async (): Promise<Product[]> => {
   
   try {
     await initializeIAP();
+    const mod = await getIAPModule();
+    if (!mod) return [];
 
     console.log('Fetching subscriptions with SKU:', IAP_PRODUCT_SKUS.MONTHLY_PRO);
 
     // Try getSubscriptions first
     try {
-      const mod = await import('react-native-iap');
-      const getSubs = (mod as any).getSubscriptions as Function;
+      const getSubs = mod.getSubscriptions as Function;
       if (getSubs) {
         const products = await getSubs({
           skus: [IAP_PRODUCT_SKUS.MONTHLY_PRO],
@@ -53,7 +70,7 @@ export const getSubscriptionProducts = async (): Promise<Product[]> => {
     }
 
     // Fallback to fetchProducts - MUST provide skus
-    const products = await fetchProducts({ 
+    const products = await mod.fetchProducts({ 
       skus: [IAP_PRODUCT_SKUS.MONTHLY_PRO], 
       type: 'subs' 
     });
@@ -71,7 +88,9 @@ export const getNonSubscriptionProducts = async (skus: string[]): Promise<Produc
   if (!shouldUseIAP) return [];
   
   try {
-    const products = await fetchProducts({ skus, type: 'in-app' });
+    const mod = await getIAPModule();
+    if (!mod) return [];
+    const products = await mod.fetchProducts({ skus, type: 'in-app' });
     return products || [];
   } catch (error) {
     console.error('Failed to get products:', error);
@@ -90,7 +109,10 @@ export const purchaseSubscription = async (productId: string): Promise<{
   }
   
   try {
-    const purchases = await requestPurchase({
+    const mod = await getIAPModule();
+    if (!mod) return { success: false, error: 'IAP not available' };
+    
+    const purchases = await mod.requestPurchase({
       type: 'subs',
       request: Platform.OS === 'ios' 
         ? { apple: { sku: productId } }
@@ -102,7 +124,7 @@ export const purchaseSubscription = async (productId: string): Promise<{
     
     if (Platform.OS === 'ios') {
       try {
-        receipt = await getReceiptDataIOS();
+        receipt = await mod.getReceiptDataIOS();
       } catch (e) {
         console.log('Could not get receipt:', e);
       }
@@ -116,7 +138,7 @@ export const purchaseSubscription = async (productId: string): Promise<{
       
       if (purchase) {
         try {
-          await finishTransaction({ purchase });
+          await mod.finishTransaction({ purchase });
         } catch (e) {
           console.log('Could not finish transaction:', e);
         }
@@ -144,7 +166,9 @@ export const getAvailableSubscriptions = async (): Promise<Purchase[]> => {
   if (!shouldUseIAP) return [];
   
   try {
-    const purchases = await getAvailablePurchases();
+    const mod = await getIAPModule();
+    if (!mod) return [];
+    const purchases = await mod.getAvailablePurchases();
     return purchases || [];
   } catch (error) {
     console.error('Failed to get available purchases:', error);
@@ -154,7 +178,10 @@ export const getAvailableSubscriptions = async (): Promise<Purchase[]> => {
 
 export const endIAPConnection = async (): Promise<void> => {
   try {
-    await endConnection();
+    const mod = await getIAPModule();
+    if (mod?.endConnection) {
+      await mod.endConnection();
+    }
     isInitialized = false;
   } catch (error) {
     console.error('Failed to end IAP connection:', error);
@@ -165,7 +192,9 @@ export const finishPurchase = async (purchase: Purchase): Promise<boolean> => {
   if (!shouldUseIAP) return false;
   
   try {
-    await finishTransaction({ purchase });
+    const mod = await getIAPModule();
+    if (!mod) return false;
+    await mod.finishTransaction({ purchase });
     return true;
   } catch (error) {
     console.error('Failed to finish transaction:', error);

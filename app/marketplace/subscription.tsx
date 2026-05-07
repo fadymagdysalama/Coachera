@@ -16,7 +16,6 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useMarketplaceStore } from '../../src/stores/marketplaceStore';
 import { shouldUseIAP } from '../../src/lib/iap';
-import { restorePurchases } from 'react-native-iap';
 import { AppAlert, useAppAlert } from '../../src/components/AppAlert';
 import { colors, spacing, fontSize, borderRadius } from '../../src/constants/theme';
 import type { SubscriptionTier } from '../../src/types';
@@ -80,7 +79,14 @@ export default function SubscriptionScreen() {
       message: t('subscription.restoreDesc'),
       buttons: [{ text: 'Cancel', style: 'cancel' }],
     });
+    
+    if (!shouldUseIAP) {
+      showAlert({ title: t('subscription.restoreNone') });
+      return;
+    }
+    
     try {
+      const { restorePurchases } = await import('react-native-iap');
       await restorePurchases();
       showAlert({ title: t('subscription.restoreSuccess') });
     } catch (error) {
