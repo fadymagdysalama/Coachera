@@ -1,6 +1,6 @@
 {
   "name": "coachera",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "index",
   "scripts": {
     "start": "expo start",
